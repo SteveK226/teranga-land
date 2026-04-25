@@ -2,10 +2,30 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { ethers } from "ethers";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contract";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+
+const markerIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 const BACKEND = "http://localhost:5000";
+const InputField = ({ label, ...props }) => (
+  <div>
+    {label && <label className="text-gray-500 text-xs uppercase tracking-wider mb-1.5 block">{label}</label>}
+    <input className="w-full p-3 rounded-lg border border-gray-200 bg-white text-gray-800 placeholder-gray-400 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-100 text-sm transition-all" {...props} />
+  </div>
+);
 
 export default function App() {
+  const [mapLands, setMapLands] = useState([]);
+  const [loadingMap, setLoadingMap] = useState(false);
   const [account, setAccount] = useState("");
   const [isOwner, setIsOwner] = useState(false);
   const [lands, setLands] = useState([]);
@@ -29,6 +49,15 @@ export default function App() {
     setRequestForm(f => ({ ...f, owner: connectedAccount }));
     const res = await axios.get(`${BACKEND}/owner`);
     setIsOwner(res.data.owner.toLowerCase() === connectedAccount.toLowerCase());
+  };
+
+  const loadMapLands = async () => {
+    setLoadingMap(true);
+    try {
+      const res = await axios.get(`${BACKEND}/lands/map`);
+      setMapLands(res.data.filter(l => l.lat && l.lng));
+    } catch (error) { console.error(error); }
+    setLoadingMap(false);
   };
 
   const loadLands = async () => {
@@ -142,6 +171,7 @@ export default function App() {
   const navItems = [
     { id: "accueil", label: "Accueil" },
     { id: "terrains", label: "Terrains" },
+    { id: "carte", label: "Carte" },  // ADD THIS
     ...(account ? [{ id: "mes_terrains", label: "Mes terrains", badge: myLands.length > 0 ? myLands.length : null }] : []),
     { id: "historique", label: "Historique" },
     { id: "demande", label: "Enregistrement" },
@@ -169,11 +199,10 @@ export default function App() {
                   <button
                     key={item.id}
                     onClick={() => setPage(item.id)}
-                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      page === item.id
-                        ? "bg-green-600 text-white"
-                        : "text-green-700 hover:bg-green-50"
-                    }`}
+                    className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${page === item.id
+                      ? "bg-green-600 text-white"
+                      : "text-green-700 hover:bg-green-50"
+                      }`}
                   >
                     {item.label}
                     {item.badge && (
@@ -194,11 +223,10 @@ export default function App() {
             {isOwner && <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200 font-medium">Administrateur</span>}
             <button
               onClick={connectWallet}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
-                account
-                  ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-                  : "border-green-600 bg-green-600 text-white hover:bg-green-700"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${account
+                ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                : "border-green-600 bg-green-600 text-white hover:bg-green-700"
+                }`}
             >
               <span className={`w-2 h-2 rounded-full ${account ? "bg-green-500" : "bg-white/50"}`}></span>
               {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : "Connecter"}
@@ -213,9 +241,8 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setMenuOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
-                  page === item.id ? "bg-green-600 text-white" : "text-green-700 hover:bg-green-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${page === item.id ? "bg-green-600 text-white" : "text-green-700 hover:bg-green-50"
+                  }`}
               >
                 {item.label}
                 {item.badge && (
@@ -227,9 +254,8 @@ export default function App() {
             ))}
             <button
               onClick={connectWallet}
-              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold border mt-1 ${
-                account ? "border-green-200 bg-green-50 text-green-700" : "border-green-600 bg-green-600 text-white"
-              }`}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold border mt-1 ${account ? "border-green-200 bg-green-50 text-green-700" : "border-green-600 bg-green-600 text-white"
+                }`}
             >
               <span className={`w-2 h-2 rounded-full ${account ? "bg-green-500" : "bg-white/50"}`}></span>
               {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : "Connecter MetaMask"}
@@ -268,12 +294,7 @@ export default function App() {
     </div>
   );
 
-  const InputField = ({ label, ...props }) => (
-    <div>
-      {label && <label className="text-gray-500 text-xs uppercase tracking-wider mb-1.5 block">{label}</label>}
-      <input className="w-full p-3 rounded-lg border border-gray-200 bg-white text-gray-800 placeholder-gray-400 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-100 text-sm transition-all" {...props} />
-    </div>
-  );
+
 
   // DETAIL PAGE
   if (selectedLand) {
@@ -327,8 +348,8 @@ export default function App() {
                     {item.type === "Mise en vente" && <p className="text-green-700 font-bold text-sm">{item.price} ETH</p>}
                     {item.type === "Achat" && (
                       <div className="space-y-1">
-                        <p className="text-gray-400 text-xs">Vendeur : <span className="font-mono text-gray-600">{item.from.slice(0,6)}...{item.from.slice(-4)}</span></p>
-                        <p className="text-gray-400 text-xs">Acheteur : <span className="font-mono text-gray-600">{item.to.slice(0,6)}...{item.to.slice(-4)}</span></p>
+                        <p className="text-gray-400 text-xs">Vendeur : <span className="font-mono text-gray-600">{item.from.slice(0, 6)}...{item.from.slice(-4)}</span></p>
+                        <p className="text-gray-400 text-xs">Acheteur : <span className="font-mono text-gray-600">{item.to.slice(0, 6)}...{item.to.slice(-4)}</span></p>
                         <p className="text-green-700 font-bold text-sm">{item.price} ETH</p>
                       </div>
                     )}
@@ -466,6 +487,75 @@ export default function App() {
                   )}
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* CARTE */}
+        {page === "carte" && (
+          <div>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Carte des terrains</h2>
+                <p className="text-gray-400 text-xs mt-1">Visualisez tous les terrains enregistrés sur la carte</p>
+              </div>
+              <button
+                onClick={loadMapLands}
+                disabled={loadingMap}
+                className="px-3 py-2 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 font-medium text-sm transition-all disabled:opacity-50"
+              >
+                {loadingMap ? "Chargement..." : "Charger la carte"}
+              </button>
+            </div>
+
+            {mapLands.length === 0 && !loadingMap && (
+              <div className="text-center py-12 bg-white rounded-2xl border border-green-100">
+                <p className="text-gray-400 text-sm mb-4">Cliquez sur "Charger la carte" pour afficher les terrains</p>
+                <button onClick={loadMapLands} className="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold text-sm transition-all">
+                  Charger la carte
+                </button>
+              </div>
+            )}
+
+            {loadingMap && (
+              <div className="text-center py-12 bg-white rounded-2xl border border-green-100">
+                <p className="text-gray-400 text-sm">Géolocalisation des terrains en cours...</p>
+              </div>
+            )}
+
+            {mapLands.length > 0 && (
+              <div className="bg-white rounded-2xl border border-green-100 shadow-sm overflow-hidden">
+                <MapContainer
+                  center={[mapLands[0].lat, mapLands[0].lng]}
+                  zoom={10}
+                  style={{ height: "500px", width: "100%" }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {mapLands.map((land) => (
+                    <Marker key={land.id} position={[land.lat, land.lng]} icon={markerIcon}>
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold mb-1">Terrain #{land.id}</p>
+                          <p className="text-gray-600">{land.location}</p>
+                          <p className="text-gray-600">{land.areaSqMeters} m²</p>
+                          <p className={`font-semibold mt-1 ${land.forSale ? "text-green-600" : "text-gray-400"}`}>
+                            {land.forSale ? `${land.price} ETH` : "Non disponible"}
+                          </p>
+                          <button
+                            onClick={() => { const l = lands.find(x => x.id === land.id); if (l) { openLandDetail(l); } }}
+                            className="mt-2 px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 w-full"
+                          >
+                            Voir détails
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
             )}
           </div>
         )}

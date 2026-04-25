@@ -48,6 +48,20 @@ async function getBlockTimestamp(blockNumber) {
   return block ? new Date(block.timestamp * 1000).toLocaleString("fr-FR") : "—";
 }
 
+async function geocodeLocation(location) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { "User-Agent": "TerangaLand/1.0" } });
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
 let historyCache = null;
 let historyCacheTime = 0;
 const CACHE_DURATION = 60000; // 1 minute
@@ -89,7 +103,7 @@ app.get("/lands/:id/history", async (req, res) => {
   try {
     const tokenId = Number(req.params.id);
     const latestBlock = await provider.getBlockNumber();
-    const fromBlock = Math.max(0, latestBlock - 50000);
+    const fromBlock = Math.max(0, latestBlock - 100000);
 
     const [mints, sales, listings] = await Promise.all([
       contractReadInfura.queryFilter(contractReadInfura.filters.LandMinted(tokenId), fromBlock, latestBlock),
@@ -221,6 +235,32 @@ app.get("/owner", async (req, res) => {
   try {
     const owner = await contractRead.owner();
     res.json({ owner });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/lands/map", async (req, res) => {
+  try {
+    const total = Number(await contractRead.totalLands());
+    const lands = [];
+    for (let i = 1; i <= total; i++) {
+      const land = await contractRead.getLand(i);
+      const owner = await contractRead.landOwner(i);
+      const coords = await geocodeLocation(land.location);
+      lands.push({
+        id: Number(land.id),
+        location: land.location,
+        areaSqMeters: Number(land.areaSqMeters),
+        price: ethers.formatEther(land.price),
+        forSale: land.forSale,
+        owner,
+        lat: coords?.lat || null,
+        lng: coords?.lng || null
+      });
+      await new Promise(r => setTimeout(r, 500));
+    }
+    res.json(lands);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

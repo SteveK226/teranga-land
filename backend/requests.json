@@ -14,7 +14,17 @@
     "location": "uyfuygqiuh",
     "areaSqMeters": "2444",
     "description": "iaf-9y98fyqerg",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "21/04/2026 20:59:45"
+  },
+  {
+    "id": 1777154531129,
+    "owner": "0xe5f753fdcdd08101cd842b78bdd554b9a76d1f9b",
+    "location": "Plateau",
+    "areaSqMeters": "500",
+    "description": "\"Documents officiels\"",
+    "status": "approved",
+    "createdAt": "25/04/2026 22:02:11",
+    "tx": "0xaf57d7a055786e6a61c31123d571c02cb41d92d303c3ff7491d274d4eb80dcd4"
   }
 ]
