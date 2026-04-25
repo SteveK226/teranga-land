@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1776615299481,
+    "owner": "0x50e43a61e7c590c1b0c9b57aa9152b3c18a21bf7",
+    "location": "ngaparou3",
+    "areaSqMeters": "300",
+    "description": "test",
+    "status": "pending",
+    "createdAt": "19/04/2026 16:14:59"
+  },
+  {
+    "id": 1776805185284,
+    "owner": "0xe5f753fdcdd08101cd842b78bdd554b9a76d1f9b",
+    "location": "uyfuygqiuh",
+    "areaSqMeters": "2444",
+    "description": "iaf-9y98fyqerg",
+    "status": "pending",
+    "createdAt": "21/04/2026 20:59:45"
+  }
+]
